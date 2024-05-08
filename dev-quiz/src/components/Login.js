@@ -4,6 +4,7 @@ import { Box } from '@mui/system'
 
 import Center from './Center'
 import useForm from '../hooks/useForm'
+import { ENDPOINTS, createAPIEndpoint } from '../api'
 
 const getFreshModel = () => ({
     email: '',
@@ -22,8 +23,9 @@ export default function Login() {
 
     const login = e => {
         e.preventDefault();
-        if (validate())
-           console.log(values);
+        if (validate()){
+            createAPIEndpoint(ENDPOINTS.Participant).post(values).then(res => console.log(res)).catch(error => console.log(error));
+        }
     }
 
     const validate = () => {

@@ -9,7 +9,9 @@ using dev_quiz_api.Models;
 
 namespace dev_quiz_api.Controllers
 {
-    public class ParticipantController : Controller
+    [Route("api/[controller]")]
+    [ApiController]
+    public class ParticipantController : ControllerBase
     {
         private readonly DevQuizDbContext _context;
 
@@ -18,134 +20,98 @@ namespace dev_quiz_api.Controllers
             _context = context;
         }
 
-        // GET: Participant
-        public async Task<IActionResult> Index()
+        // GET: api/Participant
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<Participant>>> GetParticipants()
         {
-            return View(await _context.Participants.ToListAsync());
+            return await _context.Participants.ToListAsync();
         }
 
-        // GET: Participant/Details/5
-        public async Task<IActionResult> Details(int? id)
+        // GET: api/Participant/5
+        [HttpGet("{id}")]
+        public async Task<ActionResult<Participant>> GetParticipant(int id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            var participant = await _context.Participants.FindAsync(id);
 
-            var participant = await _context.Participants
-                .FirstOrDefaultAsync(m => m.ParticipantId == id);
             if (participant == null)
             {
                 return NotFound();
             }
 
-            return View(participant);
+            return participant;
         }
 
-        // GET: Participant/Create
-        public IActionResult Create()
+        // PUT: api/Participant/5
+        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        [HttpPut("{id}")]
+        public async Task<IActionResult> PutParticipant(int id, ParticipantRestult _participantResult)
         {
-            return View();
-        }
-
-        // POST: Participant/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("ParticipantId,Email,Name,Score,TimeTaken")] Participant participant)
-        {
-            if (ModelState.IsValid)
+            if (id != _participantResult.ParticipantId)
             {
-                _context.Add(participant);
+                return BadRequest();
+            }
+
+            // get all current details of the record, then update with quiz results
+            Participant participant = _context.Participants.Find(id);
+            participant.Score = _participantResult.Score;
+            participant.TimeTaken = _participantResult.TimeTaken;
+
+            _context.Entry(participant).State = EntityState.Modified;
+
+            try
+            {
                 await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
             }
-            return View(participant);
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!ParticipantExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
         }
 
-        // GET: Participant/Edit/5
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var participant = await _context.Participants.FindAsync(id);
-            if (participant == null)
-            {
-                return NotFound();
-            }
-            return View(participant);
-        }
-
-        // POST: Participant/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+        // POST: api/Participant
+        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("ParticipantId,Email,Name,Score,TimeTaken")] Participant participant)
+        public async Task<ActionResult<Participant>> PostParticipant(Participant participant)
         {
-            if (id != participant.ParticipantId)
-            {
-                return NotFound();
-            }
+            var temp = _context.Participants
+                .Where(x => x.Name == participant.Name
+                && x.Email == participant.Email)
+                .FirstOrDefault();
 
-            if (ModelState.IsValid)
+            if (temp == null)
             {
-                try
-                {
-                    _context.Update(participant);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!ParticipantExists(participant.ParticipantId))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
+                _context.Participants.Add(participant);
+                await _context.SaveChangesAsync();
             }
-            return View(participant);
+            else
+                participant = temp;
+
+            return Ok(participant);
         }
 
-        // GET: Participant/Delete/5
-        public async Task<IActionResult> Delete(int? id)
+        // DELETE: api/Participant/5
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteParticipant(int id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var participant = await _context.Participants
-                .FirstOrDefaultAsync(m => m.ParticipantId == id);
+            var participant = await _context.Participants.FindAsync(id);
             if (participant == null)
             {
                 return NotFound();
             }
 
-            return View(participant);
-        }
-
-        // POST: Participant/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-            var participant = await _context.Participants.FindAsync(id);
-            if (participant != null)
-            {
-                _context.Participants.Remove(participant);
-            }
-
+            _context.Participants.Remove(participant);
             await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
+
+            return NoContent();
         }
 
         private bool ParticipantExists(int id)
