@@ -4,7 +4,9 @@ import { Box } from '@mui/system'
 
 import Center from './Center'
 import useForm from '../hooks/useForm'
+import useStateContext from '../hooks/useStateContext'
 import { ENDPOINTS, createAPIEndpoint } from '../api'
+import { useNavigate } from 'react-router-dom'
 
 const getFreshModel = () => ({
     email: '',
@@ -12,6 +14,9 @@ const getFreshModel = () => ({
 })
 
 export default function Login() {
+
+    const { context, setContext } = useStateContext();
+    const navigate = useNavigate();
 
     const{
         values,
@@ -24,7 +29,10 @@ export default function Login() {
     const login = e => {
         e.preventDefault();
         if (validate()){
-            createAPIEndpoint(ENDPOINTS.Participant).post(values).then(res => console.log(res)).catch(error => console.log(error));
+            createAPIEndpoint(ENDPOINTS.Participant).post(values).then(res => {
+                setContext({ participantId: res.data.participantId }) 
+                navigate('/quiz')
+            }).catch(error => console.log(error));
         }
     }
 
@@ -49,7 +57,7 @@ export default function Login() {
                             width: 500,
                             maxWidth: '100%',
                     }}>
-                        <form noValidate autoComplete="off" onSubmit={login}>
+                        <form noValidate autoComplete="on" onSubmit={login}>
                         <TextField 
                             fullWidth 
                             label="Email"
