@@ -1,15 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
+﻿#nullable disable
 using dev_quiz_api.Models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
-namespace dev_quiz_api.Controllers
+namespace QuizAPI.Controllers
 {
-    public class QuestionController : Controller
+    [Route("api/[controller]")]
+    [ApiController]
+    public class QuestionController : ControllerBase
     {
         private readonly DevQuizDbContext _context;
 
@@ -18,134 +16,103 @@ namespace dev_quiz_api.Controllers
             _context = context;
         }
 
-        // GET: Question
-        public async Task<IActionResult> Index()
+        // GET: api/Question
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<Question>>> GetQuestions()
         {
-            return View(await _context.Questions.ToListAsync());
+            var random5Qns = await (_context.Questions
+                 .Select(x => new
+                 {
+                     QId = x.QnId,
+                     QnInWords = x.QnInWords,
+                     ImageName = x.ImageName,
+                     Options = new string[] { x.Option1, x.Option2, x.Option3, x.Option4 }
+                 })
+                 .OrderBy(y => Guid.NewGuid())
+                 .Take(5)
+                 ).ToListAsync();
+
+            return Ok(random5Qns);
         }
 
-        // GET: Question/Details/5
-        public async Task<IActionResult> Details(int? id)
+        // GET: api/Question/5
+        [HttpGet("{id}")]
+        public async Task<ActionResult<Question>> GetQuestion(int id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var question = await _context.Questions
-                .FirstOrDefaultAsync(m => m.QnId == id);
-            if (question == null)
-            {
-                return NotFound();
-            }
-
-            return View(question);
-        }
-
-        // GET: Question/Create
-        public IActionResult Create()
-        {
-            return View();
-        }
-
-        // POST: Question/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("QnId,QnInWords,ImageName,Option1,Option2,Option3,Option4,Answer")] Question question)
-        {
-            if (ModelState.IsValid)
-            {
-                _context.Add(question);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-            return View(question);
-        }
-
-        // GET: Question/Edit/5
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
             var question = await _context.Questions.FindAsync(id);
+
             if (question == null)
             {
                 return NotFound();
             }
-            return View(question);
+
+            return question;
         }
 
-        // POST: Question/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("QnId,QnInWords,ImageName,Option1,Option2,Option3,Option4,Answer")] Question question)
+        // PUT: api/Question/5
+        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        [HttpPut("{id}")]
+        public async Task<IActionResult> PutQuestion(int id, Question question)
         {
             if (id != question.QnId)
             {
-                return NotFound();
+                return BadRequest();
             }
 
-            if (ModelState.IsValid)
+            _context.Entry(question).State = EntityState.Modified;
+
+            try
             {
-                try
-                {
-                    _context.Update(question);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!QuestionExists(question.QnId))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
+                await _context.SaveChangesAsync();
             }
-            return View(question);
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!QuestionExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
         }
 
-        // GET: Question/Delete/5
-        public async Task<IActionResult> Delete(int? id)
+        // POST: api/Question/GetAnswers
+        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        [HttpPost]
+        [Route("GetAnswers")]
+        public async Task<ActionResult<Question>> RetrieveAnswers(int[] qnIds)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            var answers = await (_context.Questions
+                .Where(x => qnIds.Contains(x.QnId))
+                .Select(y => new
+                {
+                    QnId = y.QnId,
+                    QnInWords = y.QnInWords,
+                    ImageName = y.ImageName,
+                    Options = new string[] { y.Option1, y.Option2, y.Option3, y.Option4 },
+                    Answer = y.Answer
+                })).ToListAsync();
+            return Ok(answers);
+        }
 
-            var question = await _context.Questions
-                .FirstOrDefaultAsync(m => m.QnId == id);
+        // DELETE: api/Question/5
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteQuestion(int id)
+        {
+            var question = await _context.Questions.FindAsync(id);
             if (question == null)
             {
                 return NotFound();
             }
 
-            return View(question);
-        }
-
-        // POST: Question/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-            var question = await _context.Questions.FindAsync(id);
-            if (question != null)
-            {
-                _context.Questions.Remove(question);
-            }
-
+            _context.Questions.Remove(question);
             await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
+
+            return NoContent();
         }
 
         private bool QuestionExists(int id)
