@@ -9,7 +9,7 @@ import { ContextProvider } from './hooks/useStateContext';
 const darkTheme = createTheme({
   palette: {
     mode: 'dark',
-  }
+  },
 });
 
 const root = ReactDOM.createRoot(document.getElementById('root'));

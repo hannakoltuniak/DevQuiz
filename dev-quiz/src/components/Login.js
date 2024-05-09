@@ -1,92 +1,94 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Button, Card, CardContent, TextField, Typography } from '@mui/material'
 import { Box } from '@mui/system'
-
 import Center from './Center'
 import useForm from '../hooks/useForm'
+import { createAPIEndpoint, ENDPOINTS } from '../api'
 import useStateContext from '../hooks/useStateContext'
-import { ENDPOINTS, createAPIEndpoint } from '../api'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 
 const getFreshModel = () => ({
-    email: '',
-    name: ''
+    name: '',
+    email: ''
 })
 
 export default function Login() {
 
-    const { context, setContext } = useStateContext();
-    const navigate = useNavigate();
+    const { context, setContext, resetContext } = useStateContext();
+    const navigate = useNavigate()
 
-    const{
+    const {
         values,
-        // setValues,
+        setValues,
         errors,
         setErrors,
         handleInputChange
     } = useForm(getFreshModel);
 
+    useEffect(() => {
+        resetContext()
+    }, [])
+
+
     const login = e => {
         e.preventDefault();
-        if (validate()){
-            createAPIEndpoint(ENDPOINTS.Participant).post(values).then(res => {
-                setContext({ participantId: res.data.participantId }) 
-                navigate('/quiz')
-            }).catch(error => console.log(error));
-        }
+        if (validate())
+            createAPIEndpoint(ENDPOINTS.Participant)
+                .post(values)
+                .then(res => {
+                    setContext({ participantId: res.data.participantId })
+                    navigate('/quiz')
+                })
+                .catch(err => console.log(err))
     }
 
     const validate = () => {
-       let temp = {}
-       temp.email = (/\S+@\S+\.\S+/).test(values.email) ? "" : "Email is not valid."
-       temp.name = values.name !== "" ? "" : "This field is required."
-       setErrors(temp)
-       return Object.values(temp).every(x => x === "")
+        let temp = {}
+        temp.email = (/\S+@\S+\.\S+/).test(values.email) ? "" : "Email is not valid."
+        temp.name = values.name !== "" ? "" : "This field is required."
+        setErrors(temp)
+        return Object.values(temp).every(x => x === "")
     }
 
     return (
         <Center>
-            <Card sx={{ 
-                width: 400, 
-                }}>
-                <CardContent sx={{textAlign:"center"}}>
-                    <Typography variant="h3" sx={{my:3}}>
-                        Dev Quiz
+            <Card sx={{ width: 400 }}>
+                <CardContent sx={{ textAlign: 'center' }}>
+                    <Typography variant="h3" sx={{ my: 3 }}>
+                        Quiz App
                     </Typography>
                     <Box sx={{
-                            width: 500,
-                            maxWidth: '100%',
+                        '& .MuiTextField-root': {
+                            m: 1,
+                            width: '90%'
+                        }
                     }}>
                         <form noValidate autoComplete="on" onSubmit={login}>
-                        <TextField 
-                            fullWidth 
-                            label="Email"
-                            name="email"
-                            variant="outlined"
-                            margin="dense"
-                            value={values.email}
-                            onChange={handleInputChange}
-                            {...(errors.email && { error: true, helperText: errors.email })} 
-                        />
-                            <TextField 
-                                fullWidth 
+                            <TextField
+                                label="Email"
+                                name="email"
+                                value={values.email}
+                                onChange={handleInputChange}
+                                variant="outlined"
+                                {...(errors.email && { error: true, helperText: errors.email })} />
+                            <TextField
                                 label="Name"
                                 name="name"
-                                variant="outlined"
-                                margin="dense"
                                 value={values.name}
                                 onChange={handleInputChange}
-                                {...(errors.name && { error: true, helperText: errors.name })} 
-                            />
+                                variant="outlined"
+                                {...(errors.name && { error: true, helperText: errors.name })} />
                             <Button
                                 type="submit"
                                 variant="contained"
                                 size="large"
-                                sx={{ width: '100%' }}>Log in</Button>
+                                sx={{ width: '90%' }}>Start</Button>
                         </form>
                     </Box>
                 </CardContent>
             </Card>
         </Center>
+
+
     )
 }

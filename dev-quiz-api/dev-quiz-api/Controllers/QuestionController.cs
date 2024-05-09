@@ -1,5 +1,10 @@
 ﻿#nullable disable
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using dev_quiz_api.Models;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -23,7 +28,7 @@ namespace QuizAPI.Controllers
             var random5Qns = await (_context.Questions
                  .Select(x => new
                  {
-                     QId = x.QnId,
+                     QnId = x.QnId,
                      QnInWords = x.QnInWords,
                      ImageName = x.ImageName,
                      Options = new string[] { x.Option1, x.Option2, x.Option3, x.Option4 }
@@ -31,6 +36,11 @@ namespace QuizAPI.Controllers
                  .OrderBy(y => Guid.NewGuid())
                  .Take(5)
                  ).ToListAsync();
+
+            foreach(var random in random5Qns)
+            {
+                Console.WriteLine(random.QnInWords);
+            }
 
             return Ok(random5Qns);
         }

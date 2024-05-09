@@ -38,6 +38,8 @@ export default function Quiz() {
     }, [])
 
     const updateAnswer = (qnId, optionIdx) => {
+        console.log(optionIdx);
+
         const temp = [...context.selectedOptions]
         temp.push({
             qnId,
@@ -54,7 +56,7 @@ export default function Quiz() {
     }
 
     return (
-        qns.length !== 0
+        qns.length != 0
             ? <Card
                 sx={{
                     maxWidth: 640, mx: 'auto', mt: 5,

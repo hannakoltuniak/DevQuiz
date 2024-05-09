@@ -46,7 +46,6 @@ namespace dev_quiz_api.Controllers
                 return BadRequest();
             }
 
-            // get all current details of the record, then update with quiz results
             Participant participant = _context.Participants.Find(id);
             participant.Score = _participantResult.Score;
             participant.TimeTaken = _participantResult.TimeTaken;
